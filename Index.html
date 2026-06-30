@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="FocusGuard">
+<title>FocusGuard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, 'Inter', sans-serif; background: #f8fafc; color: #0f172a; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
+
+  /* NAV */
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: #fff; border-bottom: 1px solid #e2e8f0; position: sticky; top: 0; z-index: 10; }
+  .nav-brand { font-weight: 700; font-size: 16px; letter-spacing: -0.02em; }
+  .nav-links { display: flex; gap: 2px; }
+  .nav-btn { background: none; border: none; padding: 6px 11px; border-radius: 8px; font-size: 13px; color: #64748b; cursor: pointer; font-weight: 500; font-family: inherit; }
+  .nav-btn.active { background: #f1f5f9; color: #0f172a; }
+
+  /* MAIN */
+  .main { max-width: 480px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* TYPOGRAPHY */
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8; margin: 20px 0 10px; }
+
+  /* BUTTONS */
+  .btn-primary { background: #0f172a; color: #fff; border: none; border-radius: 10px; padding: 12px 18px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; width: 100%; margin-top: 8px; }
+  .btn-primary:active { opacity: 0.85; }
+  .btn-ghost { background: #f1f5f9; color: #0f172a; border: none; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn-danger { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; border-radius: 10px; padding: 12px 18px; font-size: 13px; font-weight: 600; cursor: pointer; width: 100%; font-family: inherit; margin-top: 4px; }
+  .btn-small-primary { background: #0f172a; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .btn-back { background: none; border: none; color: #64748b; font-size: 14px; cursor: pointer; padding: 0 0 8px; font-family: inherit; display: block; }
+
+  /* PAGE HEADER */
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 12px; }
+  .page-header-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
+
+  /* STATS */
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  .stat { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 12px; text-align: center; }
+  .stat-value { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; color: #0f172a; }
+  .stat-value.accent { color: #ef4444; }
+  .stat-label { font-size: 11px; color: #94a3b8; font-weight: 500; margin-top: 2px; }
+
+  /* ALERT BANNER */
+  .alert-banner { display: flex; align-items: flex-start; gap: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; }
+  .alert-icon { font-size: 18px; color: #ef4444; margin-top: 1px; flex-shrink: 0; }
+  .alert-title { font-weight: 600; font-size: 14px; color: #ef4444; }
+  .alert-sub { font-size: 12px; color: #f87171; margin-top: 2px; }
+
+  /* CARDS */
+  .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; cursor: pointer; border-left-width: 3px; }
+  .card-row { display: flex; justify-content: space-between; align-items: center; }
+  .card-left { display: flex; align-items: center; gap: 0; flex-wrap: wrap; gap: 4px; }
+  .app-tag { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .card-time { font-size: 12px; color: #94a3b8; }
+  .card-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .duration-tag { font-size: 13px; font-weight: 700; }
+  .chevron { font-size: 10px; color: #cbd5e1; }
+  .card-body { margin-top: 12px; border-top: 1px solid #f1f5f9; padding-top: 12px; display: none; }
+  .card-body.open { display: block; }
+  .card-field { font-size: 13px; color: #475569; margin-bottom: 6px; line-height: 1.5; }
+  .field-label { font-weight: 600; color: #0f172a; margin-right: 4px; }
+  .missing { color: #ef4444; }
+
+  /* FORMS */
+  input[type=text], input[type=password], input[type=number], input[type=datetime-local], textarea {
+    width: 100%; border: 1px solid #e2e8f0; border-radius: 10px; padding: 11px 14px;
+    font-size: 14px; outline: none; background: #fff; font-family: inherit; display: block; margin-bottom: 4px;
+  }
+  textarea { resize: vertical; }
+  input:focus, textarea:focus { border-color: #94a3b8; }
+
+  /* TOGGLE ROW */
+  .toggle-row { display: flex; gap: 8px; margin-bottom: 4px; }
+  .toggle-btn { flex: 1; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; font-size: 13px; font-weight: 500; cursor: pointer; color: #64748b; font-family: inherit; }
+  .toggle-btn.active { background: #0f172a; color: #fff; border-color: #0f172a; }
+
+  /* PILLS */
+  .pill-flag { background: #fef2f2; color: #ef4444; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+  .pill-ok { background: #f0fdf4; color: #15803d; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-weight: 600; margin-bottom: 16px; }
+
+  /* WEEKLY REVIEW */
+  .weekly-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; }
+  .weekly-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .verdict { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin-top: 4px; }
+  .score-box { text-align: center; background: #f8fafc; border-radius: 12px; padding: 10px 16px; }
+  .score-num { font-size: 30px; font-weight: 800; display: block; letter-spacing: -0.03em; }
+  .score-label { font-size: 11px; color: #94a3b8; }
+  .review-summary { font-size: 14px; color: #475569; line-height: 1.6; margin-bottom: 16px; }
+  .review-section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #94a3b8; margin: 14px 0 8px; }
+  .flag-item { font-size: 13px; color: #b45309; background: #fffbeb; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; }
+  .positive-item { font-size: 13px; color: #15803d; background: #f0fdf4; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; }
+  .reco-box { font-size: 13px; color: #1e40af; background: #eff6ff; border-radius: 8px; padding: 10px 12px; line-height: 1.5; }
+  .review-meta { font-size: 11px; color: #cbd5e1; margin-top: 16px; text-align: right; }
+
+  /* SETTINGS */
+  .settings-msg { font-size: 13px; font-weight: 600; margin: 8px 0; }
+  .settings-note { font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 12px; }
+  .divider { border-top: 1px solid #f1f5f9; margin: 24px 0; }
+
+  /* EMPTY */
+  .empty { text-align: center; color: #94a3b8; font-size: 14px; padding: 40px 0; }
+
+  /* TOAST */
+  .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); color: #fff; border-radius: 10px; padding: 10px 20px; font-size: 13px; font-weight: 600; z-index: 999; white-space: nowrap; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+
+  /* LOADING */
+  .loading-wrap { display: flex; align-items: center; gap: 10px; padding: 24px 0; }
+  .loading-dot { width: 8px; height: 8px; border-radius: 50%; background: #0f172a; animation: pulse 1s infinite; }
+  .loading-text { font-size: 14px; color: #64748b; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* PIN SCREEN */
+  .pin-root { min-height: 100vh; background: #f8fafc; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .pin-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 36px 28px; width: 100%; max-width: 320px; text-align: center; }
+  .pin-icon { font-size: 40px; margin-bottom: 14px; }
+  .pin-title { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 6px; }
+  .pin-sub { font-size: 14px; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
+  .pin-input { width: 100%; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; font-size: 20px; text-align: center; letter-spacing: 0.25em; outline: none; margin-bottom: 12px; font-family: inherit; }
+  .pin-input:focus { border-color: #94a3b8; }
+  .pin-error { color: #ef4444; font-size: 13px; font-weight: 600; margin-bottom: 10px; min-height: 20px; }
+  .pin-hint { font-size: 11px; color: #cbd5e1; margin-top: 14px; }
+
+  /* SCREEN MANAGEMENT */
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .full-screen { display: none; }
+  .full-screen.active { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- PIN SCREEN -->
+<div class="full-screen active" id="screen-pin" style="min-height:100vh;background:#f8fafc;align-items:center;justify-content:center;padding:20px;">
+  <div class="pin-card">
+    <div class="pin-icon">⏱</div>
+    <div class="pin-title">FocusGuard</div>
+    <div class="pin-sub">Enter your PIN to continue</div>
+    <input class="pin-input" type="password" inputmode="numeric" maxlength="8" placeholder="• • • •" id="pin-input" autocomplete="off">
+    <div class="pin-error" id="pin-error"></div>
+    <button class="btn-primary" onclick="handlePinSubmit()">Unlock</button>
+    <div class="pin-hint">Default PIN: 1234 — change in Settings</div>
+  </div>
+</div>
+
+<!-- LOCKED SCREEN -->
+<div class="full-screen" id="screen-locked" style="min-height:100vh;background:#f8fafc;align-items:center;justify-content:center;padding:20px;">
+  <div class="pin-card">
+    <div class="pin-icon">🔒</div>
+    <div class="pin-title">Access used</div>
+    <div class="pin-sub">You've already reviewed today. FocusGuard allows one daily check-in to keep you honest.</div>
+    <div class="pin-sub">Come back tomorrow.</div>
+    <div class="divider"></div>
+    <div class="pin-hint" style="margin-top:0;margin-bottom:10px;">Emergency access needed?</div>
+    <button class="btn-danger" onclick="resetDailyAccess()">Override — reset daily access</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none;">
+  <nav class="nav">
+    <span class="nav-brand">FocusGuard</span>
+    <div class="nav-links">
+      <button class="nav-btn active" id="nav-home" onclick="showScreen('home')">Today</button>
+      <button class="nav-btn" id="nav-log" onclick="showScreen('log')">Log</button>
+      <button class="nav-btn" id="nav-weekly" onclick="showScreen('weekly')">Week</button>
+      <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')">Settings</button>
+    </div>
+  </nav>
+
+  <div class="main">
+
+    <!-- HOME -->
+    <div class="screen active" id="screen-home">
+      <div class="page-header">
+        <div>
+          <div class="eyebrow" id="home-greeting"></div>
+          <h1 id="home-date"></h1>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn-small-primary" onclick="showScreen('addSession')">+ Log session</button>
+        </div>
+      </div>
+      <div id="home-alert" style="display:none;" class="alert-banner">
+        <div class="alert-icon">⚠</div>
+        <div>
+          <div class="alert-title" id="home-alert-title"></div>
+          <div class="alert-sub" id="home-alert-sub"></div>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat"><div class="stat-value" id="stat-sessions">0</div><div class="stat-label">Sessions today</div></div>
+        <div class="stat"><div class="stat-value" id="stat-flagged">0</div><div class="stat-label">Flagged today</div></div>
+        <div class="stat"><div class="stat-value" id="stat-threshold">10m</div><div class="stat-label">Threshold</div></div>
+      </div>
+      <div class="section-label">Today's sessions</div>
+      <div id="today-sessions"></div>
+      <div class="section-label" style="margin-top:28px;">This week</div>
+      <div class="stat-row">
+        <div class="stat"><div class="stat-value" id="week-stat-sessions">0</div><div class="stat-label">Total sessions</div></div>
+        <div class="stat"><div class="stat-value" id="week-stat-flagged">0</div><div class="stat-label">Flagged</div></div>
+        <div class="stat"><div class="stat-value" id="week-stat-time">0m</div><div class="stat-label">Total time</div></div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="screen" id="screen-log">
+      <div class="page-header">
+        <h1>Session log</h1>
+        <div class="page-header-actions">
+          <button class="btn-ghost" onclick="exportCSV()">Export CSV</button>
+          <button class="btn-small-primary" onclick="showScreen('addSession')">+ Log</button>
+        </div>
+      </div>
+      <div id="all-sessions"></div>
+    </div>
+
+    <!-- WEEKLY -->
+    <div class="screen" id="screen-weekly">
+      <div class="page-header">
+        <h1>Weekly review</h1>
+        <div class="page-header-actions">
+          <button class="btn-ghost" id="weekly-run-btn" onclick="runWeeklyReview()">Run now</button>
+        </div>
+      </div>
+      <div id="weekly-loading" class="loading-wrap" style="display:none;">
+        <div class="loading-dot"></div>
+        <span class="loading-text">Claude is reviewing your week…</span>
+      </div>
+      <div id="weekly-content"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="screen-settings">
+      <h1 style="margin-bottom:8px;">Settings</h1>
+      <div class="section-label">Change PIN</div>
+      <input type="password" id="new-pin" placeholder="New PIN (min 4 digits)" maxlength="8" autocomplete="off">
+      <div class="section-label">Time threshold (minutes)</div>
+      <input type="number" id="new-threshold" placeholder="Current: 10 mins" min="1" max="120">
+      <div class="settings-msg" id="settings-msg"></div>
+      <button class="btn-primary" onclick="saveSettings()">Save settings</button>
+      <div class="divider"></div>
+      <div class="section-label">Daily access</div>
+      <p class="settings-note" id="access-note"></p>
+      <button class="btn-danger" onclick="resetDailyAccess()">Reset daily access</button>
+      <div class="divider"></div>
+      <div class="section-label">About</div>
+      <p class="settings-note">FocusGuard v1.0 — pairs with your iPhone Shortcuts and iCloud CSV log. Weekly AI review auto-runs every Saturday morning.</p>
+    </div>
+
+    <!-- ADD SESSION -->
+    <div class="screen" id="screen-addSession">
+      <button class="btn-back" onclick="showScreen('log')">← Back</button>
+      <h1 style="margin-bottom:20px;">Log a session</h1>
+
+      <!-- Step 1 -->
+      <div id="add-step-1">
+        <div class="section-label">Which app?</div>
+        <div class="toggle-row">
+          <button class="toggle-btn active" id="toggle-instagram" onclick="setAddApp('Instagram')">Instagram</button>
+          <button class="toggle-btn" id="toggle-facebook" onclick="setAddApp('Facebook')">Facebook</button>
+        </div>
+        <div class="section-label">Why did you open it?</div>
+        <textarea id="add-open-reason" rows="3" placeholder="Be honest…"></textarea>
+        <div class="section-label">When did you open it?</div>
+        <input type="datetime-local" id="add-open-time" oninput="updateDurationPill()">
+        <div class="section-label">When did you close it?</div>
+        <input type="datetime-local" id="add-close-time" oninput="updateDurationPill()">
+        <div id="duration-pill" style="margin-bottom:16px;"></div>
+        <button class="btn-primary" onclick="step1Next()">Continue</button>
+      </div>
+
+      <!-- Step 2 -->
+      <div id="add-step-2" style="display:none;">
+        <div class="pill-flag" id="step2-pill"></div>
+        <div class="section-label">What was this session for?</div>
+        <div class="toggle-row">
+          <button class="toggle-btn active" id="toggle-timepass" onclick="setCategory('timepass')">Passing time</button>
+          <button class="toggle-btn" id="toggle-info" onclick="setCategory('information')">Looking for info</button>
+        </div>
+        <div id="supporting-label" class="section-label">Why did you feel the need to pass time?</div>
+        <textarea id="add-supporting" rows="4" placeholder="What were you feeling? What triggered it?"></textarea>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn-ghost" onclick="showStep(1)">← Back</button>
+          <button class="btn-primary" style="margin-top:0;" onclick="saveSession()">Save session</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// =============================================
+// STATE
+// =============================================
+let state = {
+  pin: '1234',
+  threshold: 10,
+  sessions: [],
+  weeklyReview: null,
+  lastAccess: null,
+  lastWeeklyRun: null,
+};
+
+let addApp = 'Instagram';
+let addCategory = 'timepass';
+
+// =============================================
+// STORAGE (localStorage)
+// =============================================
+function ls_save(key, val) {
+  try { localStorage.setItem('fg_' + key, JSON.stringify(val)); } catch(e) {}
+}
+function ls_load(key) {
+  try {
+    const v = localStorage.getItem('fg_' + key);
+    return v ? JSON.parse(v) : null;
+  } catch(e) { return null; }
+}
+
+function saveState() {
+  ls_save('pin', state.pin);
+  ls_save('threshold', state.threshold);
+  ls_save('sessions', state.sessions);
+  ls_save('weeklyReview', state.weeklyReview);
+  ls_save('lastAccess', state.lastAccess);
+  ls_save('lastWeeklyRun', state.lastWeeklyRun);
+}
+
+function loadState() {
+  state.pin = ls_load('pin') || '1234';
+  state.threshold = ls_load('threshold') ?? 10;
+  state.sessions = ls_load('sessions') || [];
+  state.weeklyReview = ls_load('weeklyReview') || null;
+  state.lastAccess = ls_load('lastAccess') || null;
+  state.lastWeeklyRun = ls_load('lastWeeklyRun') || null;
+}
+
+// =============================================
+// DATE HELPERS
+// =============================================
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function fmtTime(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'});
+}
+function minutesBetween(a, b) {
+  return Math.round((new Date(b) - new Date(a)) / 60000);
+}
+function isSaturday() { return new Date().getDay() === 6; }
+function getWeekStart() {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const mon = new Date(new Date().setDate(diff));
+  return mon.toISOString().slice(0,10);
+}
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'morning';
+  if (h < 17) return 'afternoon';
+  return 'evening';
+}
+
+// =============================================
+// TOAST
+// =============================================
+let toastTimer = null;
+function showToast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = type === 'err' ? '#ef4444' : '#22c55e';
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// =============================================
+// PIN
+// =============================================
+document.getElementById('pin-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handlePinSubmit();
+});
+
+function handlePinSubmit() {
+  const input = document.getElementById('pin-input').value;
+  if (input === state.pin) {
+    document.getElementById('pin-error').textContent = '';
+    document.getElementById('pin-input').value = '';
+    if (state.lastAccess === todayStr()) {
+      showFullScreen('locked');
+      return;
+    }
+    state.lastAccess = todayStr();
+    saveState();
+    showFullScreen('app');
+    renderAll();
+    if (isSaturday() && state.lastWeeklyRun !== todayStr()) {
+      runWeeklyReview();
+    }
+  } else {
+    document.getElementById('pin-error').textContent = 'Incorrect PIN';
+    document.getElementById('pin-input').value = '';
+  }
+}
+
+// =============================================
+// SCREEN MANAGEMENT
+// =============================================
+function showFullScreen(which) {
+  document.getElementById('screen-pin').classList.remove('active');
+  document.getElementById('screen-locked').classList.remove('active');
+  document.getElementById('app').style.display = 'none';
+  if (which === 'pin') { document.getElementById('screen-pin').classList.add('active'); }
+  else if (which === 'locked') { document.getElementById('screen-locked').classList.add('active'); }
+  else { document.getElementById('app').style.display = 'block'; }
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  const navBtn = document.getElementById('nav-' + name);
+  if (navBtn) navBtn.classList.add('active');
+  if (name === 'home') renderHome();
+  if (name === 'log') renderLog();
+  if (name === 'weekly') renderWeekly();
+  if (name === 'settings') renderSettings();
+  if (name === 'addSession') resetAddForm();
+}
+
+// =============================================
+// RENDER HOME
+// =============================================
+function renderHome() {
+  document.getElementById('home-greeting').textContent = 'Good ' + greeting();
+  document.getElementById('home-date').textContent = new Date().toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'});
+  document.getElementById('stat-threshold').textContent = state.threshold + 'm';
+
+  const today = todayStr();
+  const todaySessions = state.sessions.filter(s => s.date === today);
+  const flaggedToday = todaySessions.filter(s => s.flagged);
+  const pending = state.sessions.filter(s => s.flagged && !s.supportingInfo);
+
+  document.getElementById('stat-sessions').textContent = todaySessions.length;
+  const flaggedEl = document.getElementById('stat-flagged');
+  flaggedEl.textContent = flaggedToday.length;
+  flaggedEl.className = 'stat-value' + (flaggedToday.length > 0 ? ' accent' : '');
+
+  const alertEl = document.getElementById('home-alert');
+  if (pending.length > 0) {
+    alertEl.style.display = 'flex';
+    document.getElementById('home-alert-title').textContent = pending.length + ' session' + (pending.length > 1 ? 's' : '') + ' need justification';
+    document.getElementById('home-alert-sub').textContent = 'You exceeded ' + state.threshold + ' mins without completing your review';
+  } else {
+    alertEl.style.display = 'none';
+  }
+
+  const todayEl = document.getElementById('today-sessions');
+  if (todaySessions.length === 0) {
+    todayEl.innerHTML = '<div class="empty">No sessions logged today</div>';
+  } else {
+    todayEl.innerHTML = todaySessions.map(s => sessionCardHTML(s)).join('');
+  }
+
+  const weekSessions = state.sessions.filter(s => s.date >= getWeekStart());
+  document.getElementById('week-stat-sessions').textContent = weekSessions.length;
+  const wf = weekSessions.filter(s => s.flagged).length;
+  document.getElementById('week-stat-flagged').textContent = wf;
+  document.getElementById('week-stat-flagged').className = 'stat-value' + (wf > 0 ? ' accent' : '');
+  document.getElementById('week-stat-time').textContent = weekSessions.reduce((a,s)=>a+(s.duration||0),0) + 'm';
+}
+
+// =============================================
+// RENDER LOG
+// =============================================
+function renderLog() {
+  const el = document.getElementById('all-sessions');
+  if (state.sessions.length === 0) {
+    el.innerHTML = '<div class="empty">No sessions logged yet</div>';
+  } else {
+    const sorted = [...state.sessions].sort((a,b) => a.timeOpened < b.timeOpened ? 1 : -1);
+    el.innerHTML = sorted.map(s => sessionCardHTML(s, true)).join('');
+  }
+}
+
+function sessionCardHTML(s, expanded=false) {
+  const flagged = s.flagged;
+  const borderColor = flagged ? '#ef4444' : '#22c55e';
+  const durationColor = flagged ? '#ef4444' : '#22c55e';
+  const bodyOpen = expanded ? 'open' : '';
+  const chevron = expanded ? '▴' : '▾';
+  return `
+    <div class="card" style="border-left-color:${borderColor}" onclick="toggleCard('card-${s.id}')">
+      <div class="card-row">
+        <div class="card-left">
+          <span class="app-tag">${s.app}</span>
+          <span class="card-time">${fmtDate(s.timeOpened)} · ${fmtTime(s.timeOpened)}</span>
+        </div>
+        <div class="card-right">
+          ${s.duration != null ? `<span class="duration-tag" style="color:${durationColor}">${s.duration}m</span>` : ''}
+          <span class="chevron" id="chevron-${s.id}">${chevron}</span>
+        </div>
+      </div>
+      <div class="card-body ${bodyOpen}" id="card-${s.id}">
+        <div class="card-field"><span class="field-label">Opened:</span>${fmtTime(s.timeOpened)}</div>
+        ${s.timeClosed ? `<div class="card-field"><span class="field-label">Closed:</span>${fmtTime(s.timeClosed)}</div>` : ''}
+        <div class="card-field"><span class="field-label">Reason for opening:</span>${s.openReason || '—'}</div>
+        ${flagged ? `
+          <div class="card-field"><span class="field-label">Category:</span>${s.category === 'timepass' ? 'Passing time' : 'Looking for info'}</div>
+          <div class="card-field"><span class="field-label">Supporting info:</span>${s.supportingInfo || '<span class="missing">Missing</span>'}</div>
+        ` : ''}
+      </div>
+    </div>`;
+}
+
+function toggleCard(id) {
+  const body = document.getElementById(id);
+  const sessionId = id.replace('card-','');
+  const chevron = document.getElementById('chevron-' + sessionId);
+  if (body.classList.contains('open')) {
+    body.classList.remove('open');
+    if (chevron) chevron.textContent = '▾';
+  } else {
+    body.classList.add('open');
+    if (chevron) chevron.textContent = '▴';
+  }
+}
+
+// =============================================
+// RENDER WEEKLY
+// =============================================
+function renderWeekly() {
+  const el = document.getElementById('weekly-content');
+  if (!state.weeklyReview) {
+    el.innerHTML = '<div class="empty">Auto-runs every Saturday morning.<br>You can also run it manually above.</div>';
+    return;
+  }
+  const r = state.weeklyReview;
+  const colors = { PASSING: '#22c55e', CONCERNING: '#f59e0b', FAILING: '#ef4444' };
+  const c = colors[r.verdict] || '#6b7280';
+  el.innerHTML = `
+    <div class="weekly-card">
+      <div class="weekly-top">
+        <div>
+          <div class="eyebrow">Week of ${r.weekStart}</div>
+          <div class="verdict" style="color:${c}">${r.verdict}</div>
+        </div>
+        <div class="score-box">
+          <span class="score-num" style="color:${c}">${r.score}</span>
+          <span class="score-label">/ 100</span>
+        </div>
+      </div>
+      <p class="review-summary">${r.summary}</p>
+      ${r.flags && r.flags.length ? `<div class="review-section-label">Flags</div>${r.flags.map(f=>`<div class="flag-item">⚑ ${f}</div>`).join('')}` : ''}
+      ${r.positives && r.positives.length ? `<div class="review-section-label">Positives</div>${r.positives.map(p=>`<div class="positive-item">✓ ${p}</div>`).join('')}` : ''}
+      ${r.recommendation ? `<div class="review-section-label">Next week</div><div class="reco-box">${r.recommendation}</div>` : ''}
+      <div class="review-meta">Generated ${new Date(r.generatedAt).toLocaleString()}</div>
+    </div>`;
+}
+
+async function runWeeklyReview() {
+  const weekStart = getWeekStart();
+  const weekSessions = state.sessions.filter(s => s.date >= weekStart);
+  if (weekSessions.length === 0) { showToast('No sessions this week to review', 'err'); return; }
+
+  document.getElementById('weekly-loading').style.display = 'flex';
+  document.getElementById('weekly-content').innerHTML = '';
+  document.getElementById('weekly-run-btn').disabled = true;
+
+  const fmtSession = s =>
+    `- ${s.date} ${fmtTime(s.timeOpened)}: ${s.app}, ${s.duration||0} mins. Open reason: "${s.openReason}". Category: ${s.category||'n/a'}. Supporting: "${s.supportingInfo||'none'}". Flagged: ${s.flagged?'yes':'no'}.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `You are a strict but fair accountability coach reviewing someone's social media usage for the week. They have a ${state.threshold}-minute threshold per session.\n\nHere are this week's sessions:\n${weekSessions.map(fmtSession).join('\n')}\n\nProvide a weekly review in JSON only (no markdown, no preamble) with this exact structure:\n{"verdict":"PASSING"|"CONCERNING"|"FAILING","score":<0-100>,"summary":"<2-3 sentence overall assessment>","flags":["<concern>"],"positives":["<positive>"],"recommendation":"<one actionable recommendation>"}\n\nBe honest and direct. Flag vague justifications, repetitive excuses, or suspiciously short supporting info. Reward genuine learning or self-awareness.`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.find(b => b.type === 'text')?.text || '{}';
+    const clean = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    state.weeklyReview = { ...parsed, generatedAt: new Date().toISOString(), weekStart };
+    state.lastWeeklyRun = todayStr();
+    saveState();
+    renderWeekly();
+  } catch(e) {
+    showToast('Review failed — check connection', 'err');
+    console.error(e);
+  }
+
+  document.getElementById('weekly-loading').style.display = 'none';
+  document.getElementById('weekly-run-btn').disabled = false;
+}
+
+// =============================================
+// RENDER SETTINGS
+// =============================================
+function renderSettings() {
+  document.getElementById('new-threshold').placeholder = 'Current: ' + state.threshold + ' mins';
+  document.getElementById('access-note').textContent =
+    state.lastAccess === todayStr()
+      ? "You've used your daily access today. Emergency reset allows a second visit — it will be noted."
+      : "You haven't accessed today yet.";
+}
+
+function saveSettings() {
+  const np = document.getElementById('new-pin').value;
+  const nt = document.getElementById('new-threshold').value;
+  const msg = document.getElementById('settings-msg');
+  if (np && np.length < 4) { msg.style.color='#ef4444'; msg.textContent='PIN must be at least 4 digits'; return; }
+  const t = parseInt(nt);
+  if (nt && (isNaN(t) || t < 1)) { msg.style.color='#ef4444'; msg.textContent='Threshold must be a positive number'; return; }
+  if (np) state.pin = np;
+  if (nt) state.threshold = t;
+  saveState();
+  document.getElementById('new-pin').value = '';
+  document.getElementById('new-threshold').value = '';
+  msg.style.color = '#22c55e';
+  msg.textContent = 'Saved ✓';
+  setTimeout(() => msg.textContent='', 2000);
+  renderSettings();
+}
+
+function resetDailyAccess() {
+  state.lastAccess = null;
+  saveState();
+  showToast('Daily access reset');
+  showFullScreen('app');
+  showScreen('home');
+}
+
+// =============================================
+// ADD SESSION
+// =============================================
+function resetAddForm() {
+  addApp = 'Instagram';
+  addCategory = 'timepass';
+  document.getElementById('toggle-instagram').classList.add('active');
+  document.getElementById('toggle-facebook').classList.remove('active');
+  document.getElementById('add-open-reason').value = '';
+  document.getElementById('add-open-time').value = '';
+  document.getElementById('add-close-time').value = '';
+  document.getElementById('add-supporting').value = '';
+  document.getElementById('duration-pill').innerHTML = '';
+  showStep(1);
+}
+
+function showStep(n) {
+  document.getElementById('add-step-1').style.display = n===1 ? 'block' : 'none';
+  document.getElementById('add-step-2').style.display = n===2 ? 'block' : 'none';
+}
+
+function setAddApp(app) {
+  addApp = app;
+  document.getElementById('toggle-instagram').classList.toggle('active', app==='Instagram');
+  document.getElementById('toggle-facebook').classList.toggle('active', app==='Facebook');
+}
+
+function setCategory(cat) {
+  addCategory = cat;
+  document.getElementById('toggle-timepass').classList.toggle('active', cat==='timepass');
+  document.getElementById('toggle-info').classList.toggle('active', cat==='information');
+  document.getElementById('supporting-label').textContent =
+    cat === 'timepass' ? 'Why did you feel the need to pass time?' : 'What did you learn or find?';
+  document.getElementById('add-supporting').placeholder =
+    cat === 'timepass' ? 'What were you feeling? What triggered it?' : 'Be specific — what was the information and was it useful?';
+}
+
+function updateDurationPill() {
+  const open = document.getElementById('add-open-time').value;
+  const close = document.getElementById('add-close-time').value;
+  const pill = document.getElementById('duration-pill');
+  if (!open || !close) { pill.innerHTML=''; return; }
+  const dur = minutesBetween(open, close);
+  if (dur <= 0) { pill.innerHTML=''; return; }
+  if (dur > state.threshold) {
+    pill.innerHTML = `<div class="pill-flag">⚑ ${dur} mins — exceeds ${state.threshold}-min threshold</div>`;
+  } else {
+    pill.innerHTML = `<div class="pill-ok">✓ ${dur} mins — within threshold</div>`;
+  }
+}
+
+function step1Next() {
+  const reason = document.getElementById('add-open-reason').value.trim();
+  const openT = document.getElementById('add-open-time').value;
+  const closeT = document.getElementById('add-close-time').value;
+  if (!reason || !openT || !closeT) { showToast('Fill in all fields', 'err'); return; }
+  const dur = minutesBetween(openT, closeT);
+  if (dur <= 0) { showToast('Close time must be after open time', 'err'); return; }
+  if (dur > state.threshold) {
+    document.getElementById('step2-pill').textContent = `⚑ Session was ${dur} mins — exceeds ${state.threshold}-min threshold`;
+    showStep(2);
+  } else {
+    doSaveSession();
+  }
+}
+
+function saveSession() {
+  const supporting = document.getElementById('add-supporting').value.trim();
+  if (!supporting) { showToast('Supporting info required', 'err'); return; }
+  doSaveSession();
+}
+
+function doSaveSession() {
+  const openT = document.getElementById('add-open-time').value;
+  const closeT = document.getElementById('add-close-time').value;
+  const dur = minutesBetween(openT, closeT);
+  const flagged = dur > state.threshold;
+  const session = {
+    id: Date.now(),
+    date: openT.slice(0,10),
+    timeOpened: new Date(openT).toISOString(),
+    timeClosed: new Date(closeT).toISOString(),
+    app: addApp,
+    openReason: document.getElementById('add-open-reason').value.trim(),
+    duration: dur,
+    flagged,
+    category: flagged ? addCategory : null,
+    supportingInfo: flagged ? document.getElementById('add-supporting').value.trim() : null,
+  };
+  state.sessions.unshift(session);
+  saveState();
+  showToast('Session logged ✓');
+  showScreen('log');
+}
+
+// =============================================
+// CSV EXPORT
+// =============================================
+function exportCSV() {
+  const header = 'date,time_opened,app,open_reason,time_closed,duration_mins,category,supporting_info,flagged';
+  const rows = state.sessions.map(s => [
+    s.date, s.timeOpened, s.app,
+    '"' + (s.openReason||'').replace(/"/g,'""') + '"',
+    s.timeClosed||'', s.duration||'',
+    s.category||'',
+    '"' + (s.supportingInfo||'').replace(/"/g,'""') + '"',
+    s.flagged ? 'YES' : 'NO'
+  ].join(','));
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'focusguard_log.csv'; a.click();
+}
+
+// =============================================
+// RENDER ALL
+// =============================================
+function renderAll() {
+  renderHome();
+}
+
+// =============================================
+// INIT
+// =============================================
+loadState();
+document.getElementById('pin-input').focus();
+</script>
+</body>
+</html>
